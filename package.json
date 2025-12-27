@@ -10,7 +10,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:chatbot.startConversation"
+    "onCommand:chatbot.startConversation",
+    "onChatParticipant:chatbot.chat"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -22,6 +23,16 @@
       {
         "command": "chatbot.startConversation",
         "title": "Start Chatbot Conversation"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "chatbot.chat",
+        "name": "Chatbot AI",
+        "description": "Engage with Chatbot AI for assistance.",
+        "isDefault": true,
+        "isGpt": true,
+        "icon": "$(comment-discussion)"
       }
     ]
   },
