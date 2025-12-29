@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-foreground);
+            box-sizing: border-box;
+        }
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: var(--vscode-editor-background);
+            border-bottom: 1px solid var(--vscode-dropdown-border);
+        }
+        #input-area {
+            display: flex;
+            padding: 10px 15px;
+            background-color: var(--vscode-editor-background);
+            border-top: 1px solid var(--vscode-dropdown-border);
+            align-items: center;
+            gap: 10px;
+        }
+        #message-input {
+            flex-grow: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 6px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #message-input:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+        #send-button {
+            padding: 10px 20px;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        #send-button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        .message-bubble {
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-bottom: 10px;
+            max-width: 75%;
+            word-wrap: break-word;
+            line-height: 1.5;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+        }
+        .user-message {
+            background-color: var(--vscode-gitDecoration-addedResourceForeground); /* Using a theme-friendly color */
+            color: var(--vscode-button-foreground);
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
+        }
+        .ai-message {
+            background-color: var(--vscode-terminal-hoverBackground); /* Another theme-friendly color */
+            color: var(--vscode-foreground);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+        #loading-indicator {
+            display: none;
+            padding: 10px;
+            text-align: center;
+            font-style: italic;
+            color: var(--vscode-editorInfo-foreground);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Scrollbar styles for elegance */
+        #messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        #messages::-webkit-scrollbar-track {
+            background: var(--vscode-scrollbarSlider-background);
+            border-radius: 10px;
+        }
+        #messages::-webkit-scrollbar-thumb {
+            background: var(--vscode-scrollbarSlider-hoverBackground);
+            border-radius: 10px;
+        }
+        #messages::-webkit-scrollbar-thumb:hover {
+            background: var(--vscode-scrollbarSlider-activeBackground);
+        }
+
+        /* Highlight.js specific styles */
+        .hljs {
+            background: none !important; /* Let message bubble background handle it */
+            padding: 0 !important;
+            border-radius: 0 !important;
+            font-size: 13px;
+        }
+        pre code {
+            display: block;
+            overflow-x: auto;
+            padding: 1em;
+            background: var(--vscode-editor-background);
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+
+        #mood-area {
+            display: flex;
+            align-items: center;
+            padding: 5px 15px;
+            gap: 10px;
+            border-top: 1px solid var(--vscode-dropdown-border);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: var(--vscode-button-background);
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--vscode-button-background);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(14px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="messages"></div>
+    <div id="loading-indicator">AI is thinking...</div>
+    <div id="mood-area">
+        <label class="switch">
+            <input type="checkbox" id="agent-mood-toggle">
+            <span class="slider round"></span>
+        </label>
+        <label for="agent-mood-toggle">Agent Mood</label>
+    </div>
+    <div id="input-area">
+        <input type="text" id="message-input" placeholder="Type your message...">
+        <button id="send-button">Send</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        const vscode = acquireVsCodeApi();
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const agentMoodToggle = document.getElementById('agent-mood-toggle');
+
+        agentMoodToggle.addEventListener('change', () => {
+            vscode.postMessage({
+                command: 'setAgentMood',
+                enabled: agentMoodToggle.checked
+            });
+        });
+
+        // Define regex for code blocks within the webview's script
+        const codeBlockRegex = /```(\w+)?\n([\s\S]*?)\n```/g;
+
+        function appendMessage(sender, text) {
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+            if (sender === 'user') {
+                bubble.classList.add('user-message');
+            } else {
+                bubble.classList.add('ai-message');
+
+                let lastIndex = 0;
+                let match;
+                const fragment = document.createDocumentFragment();
+
+                while ((match = codeBlockRegex.exec(text)) !== null) {
+                    // Add text before the code block
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+
+                    // Add the code block
+                    const pre = document.createElement('pre');
+                    const code = document.createElement('code');
+                    const lang = match[1] || 'plaintext'; // Default to plaintext if no language is specified
+                    code.classList.add(`language-${lang}`);
+                    code.textContent = match[2].trim();
+                    pre.appendChild(code);
+                    fragment.appendChild(pre);
+                    lastIndex = codeBlockRegex.lastIndex;
+                }
+
+                // Add any remaining text after the last code block
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+                bubble.appendChild(fragment);
+            }
+            if (sender === 'user') {
+                bubble.textContent = text;
+            }
+            messagesDiv.appendChild(bubble);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
+
+            // Highlight any code blocks that were just added
+            if (sender === 'ai') {
+                bubble.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            }
+        }
+
+        sendButton.addEventListener('click', () => {
+            const text = messageInput.value.trim();
+            if (text) {
+                appendMessage('user', text);
+                vscode.postMessage({
+                    command: 'sendMessage',
+                    text: text
+                });
+                messageInput.value = '';
+            }
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.command) {
+                case 'receiveMessage':
+                    appendMessage('ai', message.text);
+                    break;
+                case 'showLoading':
+                    loadingIndicator.style.display = 'block';
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    break;
+                case 'hideLoading':
+                    loadingIndicator.style.display = 'none';
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

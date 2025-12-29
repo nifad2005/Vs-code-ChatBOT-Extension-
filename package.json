@@ -2,37 +2,23 @@
   "name": "chatbot",
   "displayName": "chatbot",
   "description": "chatbot that can help user",
+  "publisher": "nifad",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.107.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "onCommand:chatbot.startConversation",
-    "onChatParticipant:chatbot.chat"
+    "onCommand:chatbot.start"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "chatbot.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "chatbot.startConversation",
-        "title": "Start Chatbot Conversation"
-      }
-    ],
-    "chatParticipants": [
-      {
-        "id": "chatbot.chat",
-        "name": "Chatbot AI",
-        "description": "Engage with Chatbot AI for assistance.",
-        "isDefault": true,
-        "isGpt": true,
-        "icon": "$(comment-discussion)"
+        "command": "chatbot.start",
+        "title": "Start Chatbot"
       }
     ]
   },
@@ -49,7 +35,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "typescript-eslint": "^8.48.1",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "typescript": "^5.9.3",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2"
